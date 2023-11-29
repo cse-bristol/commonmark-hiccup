@@ -4,7 +4,8 @@
   renders to hiccup (https://github.com/weavejester/hiccup) data
   structures. The renderer itself is quite configurable."
   (:require [hiccup.core :as hiccup]
-            [clojure.walk :as walk])
+            [clojure.walk :as walk]
+            [clojure.string :as string])
   (:import org.commonmark.parser.Parser))
 
 (def default-config
@@ -29,8 +30,14 @@
                       org.commonmark.node.StrongEmphasis    [:strong :content]
                       org.commonmark.node.ThematicBreak     [:hr]
                       org.commonmark.node.SoftLineBreak     " "
-                      org.commonmark.node.HardLineBreak     [:br]}}
-   :parser   {:extensions nil}})
+                      org.commonmark.node.HardLineBreak     [:br]
+
+                      org.commonmark.ext.gfm.tables.TableBlock [:table :content]
+                      org.commonmark.ext.gfm.tables.TableHead  [:thead :content]
+                      org.commonmark.ext.gfm.tables.TableBody  [:tbody :content]
+                      org.commonmark.ext.gfm.tables.TableRow   [:tr :content]
+                      org.commonmark.ext.gfm.tables.TableCell  [:td :content]}}
+   :parser   {:extensions [(org.commonmark.ext.gfm.tables.TablesExtension/create)]}})
 
 (defn- children
   "Returns a seq of the children of a commonmark-java AST node."
@@ -45,6 +52,12 @@
        (filter #(instance? org.commonmark.node.Text %))
        (map #(.getLiteral %))
        (apply str)))
+
+(defn anchor
+  [node]
+  (-> (text-content node)
+      (string/replace #" " "_")
+      (string/lower-case)))
 
 (defn property-map [node]
   (into {} (for [[k v] (dissoc (bean node) :class)]
@@ -85,6 +98,7 @@
          (walk/postwalk #(if (= :content %) (render-children node) %))
          (walk/postwalk #(if (= :content-tight %) (render-children (first (children node))) %))
          (walk/postwalk #(if (= :text-content %) (text-content node) %))
+         (walk/postwalk #(if (= :anchor %) (anchor node) %))
          (walk/postwalk #(if (list? %) (string-fuse %) %)))))
 
 (defn- parse-markdown

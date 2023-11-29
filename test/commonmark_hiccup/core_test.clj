@@ -1,5 +1,6 @@
 (ns commonmark-hiccup.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.string :as string]
+            [clojure.test :refer :all]
             [commonmark-hiccup.core :refer :all]))
 
 (deftest markdown->html-test
@@ -76,14 +77,16 @@
 
 (deftest commonmark-extensions-test
   (testing "renders tables"
-    (let [config (-> default-config
-                     (update-in [:parser :extensions] conj
-                                (org.commonmark.ext.gfm.tables.TablesExtension/create))
-                     (update-in [:renderer :nodes] merge
-                                {org.commonmark.ext.gfm.tables.TableBlock [:table :content]
-                                 org.commonmark.ext.gfm.tables.TableHead  [:thead :content]
-                                 org.commonmark.ext.gfm.tables.TableBody  [:tbody :content]
-                                 org.commonmark.ext.gfm.tables.TableRow   [:tr :content]
-                                 org.commonmark.ext.gfm.tables.TableCell  [:td :content]}))]
-      (is (= (markdown->html config "|head1|head2|\n|---|---|\n|foo|bar|")
-             "<table><thead><tr><td>head1</td><td>head2</td></tr></thead><tbody><tr><td>foo</td><td>bar</td></tr></tbody></table>")))))
+    (is (= (markdown->html "|head1|head2|\n|---|---|\n|foo|bar|")
+           "<table><thead><tr><td>head1</td><td>head2</td></tr></thead><tbody><tr><td>foo</td><td>bar</td></tr></tbody></table>"))))
+
+(deftest anchor-links
+  (testing "nodes can be given valid IDs to be used as link targets"
+    (let [config (assoc-in default-config
+                           [:renderer :nodes org.commonmark.node.Heading]
+                           ['(:h :node-level) {:id :anchor} :content])]
+      (is (= "<h2 id=\"abc_def\">abc def</h2>"
+             (markdown->html config "## abc def")))
+      
+      (is (= "<h2 id=\"abc_def\">abc <strong>def</strong></h2>"
+             (markdown->html config "## abc **def**"))))))
