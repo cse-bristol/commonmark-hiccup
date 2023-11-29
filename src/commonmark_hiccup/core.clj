@@ -36,8 +36,14 @@
                       org.commonmark.ext.gfm.tables.TableHead  [:thead :content]
                       org.commonmark.ext.gfm.tables.TableBody  [:tbody :content]
                       org.commonmark.ext.gfm.tables.TableRow   [:tr :content]
-                      org.commonmark.ext.gfm.tables.TableCell  [:td :content]}}
-   :parser   {:extensions [(org.commonmark.ext.gfm.tables.TablesExtension/create)]}})
+                      org.commonmark.ext.gfm.tables.TableCell  [:td :content]
+                      
+                      org.commonmark.ext.front.matter.YamlFrontMatterBlock :content-map
+                      org.commonmark.ext.front.matter.YamlFrontMatterNode [:node-key :node-values]
+                      }}
+   
+   :parser   {:extensions [(org.commonmark.ext.gfm.tables.TablesExtension/create)
+                           (org.commonmark.ext.front.matter.YamlFrontMatterExtension/create)]}})
 
 (defn- children
   "Returns a seq of the children of a commonmark-java AST node."
@@ -96,6 +102,7 @@
     (->> html-config
          (walk/postwalk-replace (node-properties node))
          (walk/postwalk #(if (= :content %) (render-children node) %))
+         (walk/postwalk #(if (= :content-map %) (into {} (render-children node)) %))
          (walk/postwalk #(if (= :content-tight %) (render-children (first (children node))) %))
          (walk/postwalk #(if (= :text-content %) (text-content node) %))
          (walk/postwalk #(if (= :anchor %) (anchor node) %))
@@ -113,7 +120,19 @@
   "Takes a string of markdown and converts it to Hiccup. Optionally takes a configuration
   map, allowing customization of the Hiccup output."
   ([s]        (markdown->hiccup default-config s))
-  ([config s] (render-node config (parse-markdown config s))))
+  ([config s] (let [hiccup (render-node config (parse-markdown config s))]
+                (if (map? (first hiccup))
+                  (rest hiccup)
+                  hiccup))))
+
+(defn markdown->hiccup-with-front-matter
+  "Takes a string of markdown and converts it to Hiccup. Optionally takes a configuration
+  map, allowing customization of the Hiccup output."
+  ([s]        (markdown->hiccup-with-front-matter default-config s))
+  ([config s] (let [hiccup (render-node config (parse-markdown config s))]
+                (if (map? (first hiccup))
+                  {:hiccup (rest hiccup) :front-matter (first hiccup)}
+                  {:hiccup hiccup}))))
 
 (defn markdown->html
   "Takes a string of markdown and converts it to HTML. Optionally takes a configuration

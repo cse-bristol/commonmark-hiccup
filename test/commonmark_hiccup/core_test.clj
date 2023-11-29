@@ -69,8 +69,8 @@
     (is (= (markdown->html "This is <foo>text</bar> surrounded by tags.")
            "<p>This is <foo>text</bar> surrounded by tags.</p>")))
   (testing "renders thematic breaks"
-    (is (= (markdown->html "---")
-           "<hr />")))
+    (is (= (markdown->html "# a\n---")
+           "<h1>a</h1><hr />")))
   (testing "renders hard line breaks"
     (is (= (markdown->html "This is a\\\nline with\\\nhard line breaks.")
            "<p>This is a<br />line with<br />hard line breaks.</p>"))))
@@ -90,3 +90,15 @@
       
       (is (= "<h2 id=\"abc_def\">abc <strong>def</strong></h2>"
              (markdown->html config "## abc **def**"))))))
+
+(deftest yaml-front-matter
+  (testing "Handles yaml front matter"
+    (is (= {"key" ["value"], "k2" ["v2"]}
+           (:front-matter (markdown->hiccup-with-front-matter "---\nkey: value\nk2: v2\n---\n\n## head\nabc\n\ndef"))))
+           
+    (is (= '(["h2" ("head")] [:p ("abc")] [:p ("def")])
+           (:hiccup (markdown->hiccup-with-front-matter "---\nkey: value\nk2: v2\n---\n\n## head\nabc\n\ndef"))
+           (:hiccup (markdown->hiccup-with-front-matter "## head\nabc\n\ndef"))
+           (markdown->hiccup "## head\nabc\n\ndef")
+           (markdown->hiccup "---\nkey: value\nk2: v2\n---\n\n## head\nabc\n\ndef")))
+    ))
