@@ -55,6 +55,8 @@
   (testing "renders tight lists"
     (is (= (markdown->html "- foo\n- bar\n- baz")
            "<ul><li>foo</li><li>bar</li><li>baz</li></ul>"))
+    (is (= (markdown->html "- foo\n  - bar\n  - baz")
+           "<ul><li>foo<ul><li>bar</li><li>baz</li></ul></li></ul>"))
     (is (= (markdown->html "1. foo\n2. bar")
            "<ol><li>foo</li><li>bar</li></ol>"))
     (is (= (markdown->html "1. foo\n2. bar\n3) baz")
