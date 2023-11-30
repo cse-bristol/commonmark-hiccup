@@ -98,7 +98,7 @@
     (is (= {"key" ["value"], "k2" ["v2"]}
            (:front-matter (markdown->hiccup-with-front-matter "---\nkey: value\nk2: v2\n---\n\n## head\nabc\n\ndef"))))
            
-    (is (= '(["h2" ("head")] [:p ("abc")] [:p ("def")])
+    (is (= '([:h2 ("head")] [:p ("abc")] [:p ("def")])
            (:hiccup (markdown->hiccup-with-front-matter "---\nkey: value\nk2: v2\n---\n\n## head\nabc\n\ndef"))
            (:hiccup (markdown->hiccup-with-front-matter "## head\nabc\n\ndef"))
            (markdown->hiccup "## head\nabc\n\ndef")

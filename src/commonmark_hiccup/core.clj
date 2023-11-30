@@ -94,7 +94,7 @@
   "Takes a seq and joins its elements into a single string. If a keyword
   is in the first position, its name is used instead of the keyword itself."
   [s]
-  (apply str (cons (name (first s)) (rest s))))
+  (keyword (apply str (cons (name (first s)) (rest s)))))
 
 (defn- render-node [config node]
   (let [html-config     (get-in config [:renderer :nodes (class node)])
